@@ -11,7 +11,7 @@ class BlueskySender extends ExternalPostSender
     public function __construct(
         private ?string $handle = null,
         private ?string $password = null,
-        private ?bool $enabled = null,
+        private ?bool $enabled = null
     ) {
         parent::__construct();
 
@@ -54,7 +54,14 @@ class BlueskySender extends ExternalPostSender
             $language = 'en';
 
             $message = $this->getTextFieldContent($page, $trimTextPosition);
-            $message .= "\n" . $pageUrl;
+
+            if (is_callable($this->$pageLink)) {
+                $pageUrl = $this->$pageLink($page);
+            }
+
+            if ($pageUrl) {
+                $message .= "\n" . $pageUrl;
+            }
 
             if ($defaultLanguage = kirby()->defaultLanguage()) {
                 $language = $defaultLanguage->code();
@@ -151,7 +158,13 @@ class BlueskySender extends ExternalPostSender
             if ($this->imagefield) {
                 $imagefield = $this->imagefield;
                 $image = $page->$imagefield();
+            }
 
+            if (is_callable($this->$pageImage)) {
+                $image = $this->$pageImage($page);
+            }
+
+            if ($image) {
                 if (!is_null($image) && $image->isNotEmpty()) {
                     $imageMimeType = $image->toFile()->mime();
                     $imagePath = $image->toFile()->resize(800)->root(); // TODO image size must be very low, so we need to resize it

@@ -11,7 +11,7 @@ class MastodonSender extends ExternalPostSender
     public function __construct(
         private ?string $instanceUrl = null,
         private ?string $token = null,
-        private ?bool $enabled = null,
+        private ?bool $enabled = null
     ) {
         parent::__construct();
 
@@ -71,7 +71,14 @@ class MastodonSender extends ExternalPostSender
             $trimTextPosition = $this->calculatePostTextLength($pageUrl);
 
             $message = $this->getTextFieldContent($page, $trimTextPosition);
-            $message .= "\n" . $pageUrl;
+
+            if (is_callable($this->$pageLink)) {
+                $pageUrl = $this->$pageLink($page);
+            }
+
+            if ($pageUrl) {
+                $message .= "\n" . $pageUrl;
+            }
 
             $headers = ['Authorization: Bearer ' . $this->token, 'Content-Type: application/json'];
 
@@ -116,7 +123,13 @@ class MastodonSender extends ExternalPostSender
             if ($this->imagefield) {
                 $imagefield = $this->imagefield;
                 $image = $page->$imagefield();
+            }
 
+            if (is_callable($this->$pageImage)) {
+                $image = $this->$pageImage($page);
+            }
+
+            if ($image) {
                 if (!is_null($image) && $image->isNotEmpty()) {
                     $imagePath = $image->toFile()->root();
 

@@ -7,6 +7,9 @@ use Kirby\Toolkit\Str;
 class ExternalPostSender extends Sender
 {
     public function __construct(
+        public ?callable $pageText = null,
+        public ?callable $pageImage = null,
+        public ?callable $pageLink = null,
         public ?array $textfields = null,
         public ?string $imagefield = null,
         public ?string $prefereLanguage = null,
@@ -16,6 +19,10 @@ class ExternalPostSender extends Sender
         public ?PageChecks $pageChecks = null
     ) {
         parent::__construct();
+
+        $this->pageText = $pageText ?? option('mauricerenck.indieConnector.post.pageText', null);
+        $this->pageImage = $pageImage ?? option('mauricerenck.indieConnector.post.pageImage', null);
+        $this->$pageLink = $pageLink ?? option('mauricerenck.indieConnector.post.$pageLink', null);
 
         $this->textfields = $textfields ?? option('mauricerenck.indieConnector.post.textfields', ['description']);
         $this->imagefield = $imagefield ?? option('mauricerenck.indieConnector.post.imagefield', false);
@@ -45,6 +52,10 @@ class ExternalPostSender extends Sender
     {
         $pageOfLanguage = !$this->prefereLanguage ? null : $page->translation($this->prefereLanguage);
         $content = !is_null($pageOfLanguage) ? $pageOfLanguage->content() : $page->content()->toArray();
+
+        if (is_callable($this->$pageText)) {
+            return Str::short($this->$pageText($page), $trimTextPosition);
+        }
 
         if (is_array($this->textfields)) {
             foreach ($this->textfields as $field) {
